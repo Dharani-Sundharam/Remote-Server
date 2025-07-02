@@ -1,0 +1,42 @@
+# Curio Support Dashboard Requirements
+# Web Framework
+Flask==2.3.3
+Flask-CORS==4.0.0
+
+# Database
+sqlite3  # Built-in with Python
+
+# Security & Authentication
+Werkzeug==2.3.7
+secrets  # Built-in with Python
+
+# System & Process Management
+psutil==5.9.5
+
+# Date/Time Handling
+python-dateutil==2.8.2
+
+# JSON & Data Processing
+jsonschema==4.19.1
+
+# Logging & Monitoring
+logging  # Built-in with Python
+
+# Optional: For production deployment
+# gunicorn==21.2.0
+# nginx  # System package
+
+# Optional: For SSL/HTTPS
+# pyOpenSSL==23.2.0
+
+# Optional: For advanced monitoring
+# prometheus-client==0.17.1
+
+# Optional: For email notifications
+# smtplib  # Built-in with Python
+
+# Development Dependencies (optional)
+# pytest==7.4.2
+# pytest-flask==1.2.0
+# black==23.7.0
+# flake8==6.0.0 

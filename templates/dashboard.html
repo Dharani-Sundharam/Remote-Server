@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Curio Support{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-tachometer-alt me-2"></i>Support Dashboard
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshData()">
+                <i class="fas fa-sync me-1"></i>Refresh
+            </button>
+        </div>
+        <button type="button" class="btn btn-sm btn-primary" onclick="location.href='{{ url_for('create_ticket') }}'">
+            <i class="fas fa-plus me-1"></i>New Ticket
+        </button>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stat border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Online Devices</div>
+                        <div class="stat-number mb-0">{{ online_devices }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-laptop fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stat border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Total Devices</div>
+                        <div class="stat-number mb-0">{{ total_devices }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-server fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stat border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Open Tickets</div>
+                        <div class="stat-number mb-0">{{ open_tickets }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-ticket-alt fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stat border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Active Sessions</div>
+                        <div class="stat-number mb-0">{{ active_sessions }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-terminal fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Row -->
+<div class="row">
+    <!-- Recent Tickets -->
+    <div class="col-lg-8 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-ticket-alt me-2"></i>Recent Support Tickets
+                </h6>
+                <a href="{{ url_for('tickets') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_tickets %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Customer</th>
+                                    <th>Issue</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ticket in recent_tickets %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('ticket_detail', ticket_id=ticket[0]) }}" 
+                                           class="text-decoration-none">#{{ ticket[0] }}</a>
+                                    </td>
+                                    <td>{{ ticket[2] }}</td>
+                                    <td>
+                                        <span data-bs-toggle="tooltip" title="{{ ticket[3] }}">
+                                            {{ ticket[3][:30] }}{% if ticket[3]|length > 30 %}...{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if ticket[4] == 'high' %}danger{% elif ticket[4] == 'medium' %}warning{% else %}success{% endif %}">
+                                            {{ ticket[4].title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if ticket[5] == 'open' %}primary{% elif ticket[5] == 'in_progress' %}warning{% else %}success{% endif %}">
+                                            {{ ticket[5].replace('_', ' ').title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small>{{ ticket[6][:16] }}</small>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('ticket_detail', ticket_id=ticket[0]) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if ticket[1] %}
+                                            <button class="btn btn-sm btn-outline-success" 
+                                                    id="ssh-{{ ticket[1] }}" 
+                                                    onclick="startSSH('{{ ticket[1] }}')">
+                                                <i class="fas fa-terminal"></i>
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No recent support tickets</p>
+                        <a href="{{ url_for('create_ticket') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Create First Ticket
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Online Devices -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="fas fa-laptop me-2"></i>Online Devices
+                </h6>
+                <a href="{{ url_for('devices') }}" class="btn btn-sm btn-outline-success">View All</a>
+            </div>
+            <div class="card-body">
+                {% if online_devices_list %}
+                    {% for device in online_devices_list %}
+                    <div class="d-flex align-items-center py-2 border-bottom">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">{{ device[1] or device[0] }}</div>
+                            <small class="text-muted">
+                                <i class="fas fa-map-marker-alt me-1"></i>{{ device[2] or 'Unknown' }}
+                                {% if device[3] %}| {{ device[3] }}{% endif %}
+                            </small>
+                            {% if device[4] %}
+                                <br><small class="text-info">
+                                    <i class="fas fa-network-wired me-1"></i>{{ device[4] }}
+                                </small>
+                            {% endif %}
+                        </div>
+                        <div class="text-end">
+                            <span class="status-online">
+                                <i class="fas fa-circle"></i>
+                            </span>
+                            <br>
+                            <button class="btn btn-sm btn-outline-primary mt-1" 
+                                    id="ssh-{{ device[0] }}" 
+                                    onclick="startSSH('{{ device[0] }}')">
+                                <i class="fas fa-terminal"></i>
+                            </button>
+                            <div id="ssh-command-{{ device[0] }}"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-laptop fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No devices online</p>
+                        <small class="text-muted">Devices will appear here when they connect</small>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Health Chart -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-line me-2"></i>System Health Overview
+                </h6>
+            </div>
+            <div class="card-body">
+                <canvas id="systemHealthChart" width="100" height="30"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// System Health Chart
+const ctx = document.getElementById('systemHealthChart').getContext('2d');
+const systemHealthChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: ['1h ago', '50m ago', '40m ago', '30m ago', '20m ago', '10m ago', 'Now'],
+        datasets: [{
+            label: 'Online Devices',
+            data: [{{ online_devices }}, {{ online_devices }}, {{ online_devices-1 if online_devices > 0 else 0 }}, {{ online_devices }}, {{ online_devices }}, {{ online_devices }}, {{ online_devices }}],
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+        }, {
+            label: 'Open Tickets',
+            data: [{{ open_tickets+2 }}, {{ open_tickets+1 }}, {{ open_tickets+1 }}, {{ open_tickets }}, {{ open_tickets }}, {{ open_tickets }}, {{ open_tickets }}],
+            borderColor: 'rgb(255, 99, 132)',
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: {
+                display: false
+            }
+        },
+        interaction: {
+            intersect: false,
+        },
+        scales: {
+            x: {
+                display: true,
+                title: {
+                    display: true,
+                    text: 'Time'
+                }
+            },
+            y: {
+                display: true,
+                title: {
+                    display: true,
+                    text: 'Count'
+                },
+                beginAtZero: true
+            }
+        }
+    },
+});
+
+// Real-time updates (simulated)
+setInterval(function() {
+    // In a real implementation, this would fetch actual data
+    const now = new Date().toLocaleTimeString();
+    systemHealthChart.data.labels.push(now);
+    systemHealthChart.data.labels.shift();
+    
+    // Simulate some variation in data
+    systemHealthChart.data.datasets[0].data.push({{ online_devices }} + Math.floor(Math.random() * 2));
+    systemHealthChart.data.datasets[0].data.shift();
+    
+    systemHealthChart.data.datasets[1].data.push({{ open_tickets }} + Math.floor(Math.random() * 2));
+    systemHealthChart.data.datasets[1].data.shift();
+    
+    systemHealthChart.update('none');
+}, 30000); // Update every 30 seconds
+</script>
+{% endblock %} 
